@@ -6,21 +6,41 @@
 extern _printf
 
 section .data
-    ori_msg: db "ORI $%d, %04X", 0xA, 0 ; For disassembly in the future
-    debug_remove_later: db "$8 = %08X", 0xA, 0
+    ori_msg: db "ORI $%d, %04X", 0xA, 0 ; For disassembly in the future 
 
     alu_opcode_table:
         dd sll, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op ; 0-7
         dd unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op ; 8-F
         dd unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op ; 10-17
         dd unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op ; 18-1F
-        dd unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op ; 20-27
+        dd unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, or, unknown_op, unknown_op ; 20-27
         dd unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op ; 28-2F
         dd unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op ; 30-37
         dd unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op ; 38-3F
 
 
 section .text
+
+; params: 
+; ebx -> instruction
+; not preserved: eax, ebx, ecx
+or:
+    mov eax, ebx ; copy instruction to eax and ecx
+    mov ecx, ebx
+
+    shr ebx, 21 ; set ebx to rs index
+    and ebx, 0x1F
+    mov ebx, dword [processor + ebx * 4] ; set ebx to rs
+
+    shr ecx, 16 ; set ecx to rt index
+    and ecx, 0x1F
+    or ebx, dword [processor + ecx * 4] ; ebx |= ecx
+
+    shr eax, 11
+    and eax, 0x1F ; set eax to rd index
+
+    mov dword [processor + eax * 4], ebx ; rd = ecx
+    jmp alu_op_type_r.exit
 
 ; params: 
 ; ebx -> instruction
@@ -35,9 +55,26 @@ ori:
 
 ; params: 
 ; ebx -> instruction
-; not preserved: eax
+; not preserved: eax, ebx, ecx
+addiu:
+    mov eax, ebx ; copy instruction into eax and ecx
+    mov ecx, ebx 
+
+    shr eax, 16 ; store index of rt into eax
+    and eax, 0x1F
+
+    shr ecx, 21 ; store index of rs into ecx
+    and ecx, 0x1F
+
+    movsx ebx, bx ; sign extend 16-bit imm in ebx
+    add ebx, dword [processor + ecx * 4] ; add rs to ebx
+    mov dword [processor + eax * 4], ebx ; store result in rt
+
+; params: 
+; ebx -> instruction
+; not preserved: eax, ebx, ecx
 sll:
-    mov eax, ebx
+    mov eax, ebx ; copy instruction to eax and ecx
     mov ecx, ebx
 
     shr ebx, 16
@@ -62,7 +99,7 @@ sll:
 ; not preserved: eax
 alu_op_type_r:
     mov eax, ebx
-    and eax, 0x1F ; fetch the instruction type
+    and eax, 0x3F ; fetch the instruction type
     jmp [alu_opcode_table + eax * 4] ; jump to the handler
 
 .exit:

@@ -4,14 +4,15 @@
 %include "include\cpu.inc"
 %include "CPU\load_store.asm"
 %include "CPU\alu.asm"
+%include "CPU\branches.asm"
 
 extern _exit
 
 section .data
     unknown_opcode_msg: db "Unknown opcode %08X", 0xA, 0
     opcode_table: ; Jump table of opcodes
-        dd alu_op_type_r, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op ; 0-7
-        dd unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, ori, unknown_op, lui ; 8-F
+        dd alu_op_type_r, unknown_op, j, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op ; 0-7
+        dd unknown_op, addiu, unknown_op, unknown_op, unknown_op, ori, unknown_op, lui ; 8-F
         dd unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op ; 10-17
         dd unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op ; 18-1F
         dd unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op ; 20-27
@@ -26,22 +27,25 @@ section .text
 
 init_cpu:
     mov dword [processor + pc], 0xBFC00000 ; set PC to start of BIOS
+    mov dword [processor + nextInstruction], 0 ; Opcode for sll $0, $0, 0, the most common encoding for NOP in MIPS
     ret
 
 ; sets eax to the opcode and ebx to the instruction
 ; then jumps to the instruction handler
 executeInstruction:
     mov dword [processor + GPRs], 0 ; set $zero to 0
+    mov ebx, dword [processor + nextInstruction] ; read the instruction to be executed into ebx
     mov eax, dword [processor + pc] ; read 32 bits from mem[pc]
     call read32
+    mov dword [processor + nextInstruction], eax ; set eax as the instruction to be executed in the next cycle
+    add dword [processor + pc], 4 ; inc PC by 4
 
-    mov ebx, eax ; store instruction in ebx
+    mov eax, ebx ; copy instruction to eax
     shr eax, 26 ; get opcode
 
     jmp [opcode_table + eax * 4] ; jump to instruction handler
 
-.exit:    
-    add dword [processor + pc], 4 ; inc PC by 4
+.exit:      
     ret
 
 unknown_op: ; unknown opcode handler
