@@ -57,4 +57,4 @@ write32_unknown:
     call _printf
 
     add esp, 12 ; clean up stack
-    call _exit
+    ret
