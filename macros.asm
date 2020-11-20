@@ -1,12 +1,14 @@
 %ifndef MACROS_ASM
 %define MACROS_ASM
 
+extern _printf
 extern _fopen
 extern _fread
 
 section .bss:
 fileReadFailMsg: db "Failed to read file %s :(", 0xA, 0
 fileReadSuccessMsg: db "Successfully opened file %s! :)", 0xA, 0
+printRegsFmt: db "eax: %08X, ebx: %08X", 0xA, "ecx: %08X, edx: %08X", 0xA, "esi: %08X, edi: %08X", 0xA, "ebp: %08X, esp: %08X", 0xA, 0
 
 section .text:
 ; fopens a file, and freads its contents into a buffer
@@ -52,4 +54,18 @@ readFail:
     add esp, 8 ; clean up stack
     ret
 
+; prints the most important host regs
+%macro printRegs 0
+    push esp
+    push ebp
+    push edi
+    push esi
+    push edx
+    push ecx
+    push ebx
+    push eax
+    push printRegsFmt
+    call _printf
+    add esp, 36 ; clean up stack
+%endmacro
 %endif

@@ -16,7 +16,7 @@ section .text
 ; not preserved: eax
 ori:
     mov eax, ebx ; copy instruction into eax
-    sar eax, 16 ; fetch index of rt 
+    shr eax, 16 ; fetch index of rt 
     and eax, 0x1F
 
     or word [processor + eax * 4], bx ; or low 12 bits of the register with imm
