@@ -39,7 +39,7 @@ mtc0:
     call _printf
     add esp, 16 ; clean up stack
 
-    jmp executeInstruction.exit
+    ret
 
 cop_unknown_op:
     shr ebx, 26

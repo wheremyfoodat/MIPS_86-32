@@ -7,12 +7,14 @@
 %include "CPU\branches.asm"
 %include "CPU\coprocessors\coprocessor.asm"
 
+extern _printf
 extern _exit
 
 section .data
     unknown_opcode_msg: db "Unknown opcode %08X", 0xA, 0
+    exception_error_msg: db "Attempted to throw exception!", 0xA, 0
     opcode_table: ; Jump table of opcodes
-        dd alu_op_type_r, unknown_op, j, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op ; 0-7
+        dd alu_op_type_r, unknown_op, j, unknown_op, unknown_op, bne, unknown_op, unknown_op ; 0-7
         dd unknown_op, addiu, unknown_op, unknown_op, unknown_op, ori, unknown_op, lui ; 8-F
         dd cop0_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op ; 10-17
         dd unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op ; 18-1F
@@ -46,13 +48,16 @@ executeInstruction:
 
     jmp [opcode_table + eax * 4] ; jump to instruction handler
 
-.exit:      
-    ret
-
 unknown_op: ; unknown opcode handler
     push ebx ; print unknown instruction
     push unknown_opcode_msg 
     call _printf
+    call _exit ; abort
+
+throw_exception:
+    push exception_error_msg ; print an error msg
+    call _printf 
+    add esp, 4 ; clean up stack
     call _exit ; abort
 
 %endif

@@ -40,7 +40,7 @@ or:
     and eax, 0x1F ; set eax to rd index
 
     mov dword [processor + eax * 4], ebx ; rd = ecx
-    jmp executeInstruction.exit ; return
+    ret ; return
 
 ; params: 
 ; ebx -> instruction
@@ -51,7 +51,7 @@ ori:
     and eax, 0x1F
 
     or word [processor + eax * 4], bx ; or low 12 bits of the register with imm
-    jmp executeInstruction.exit ; return
+    ret ; return
 
 ; params: 
 ; ebx -> instruction
@@ -69,7 +69,7 @@ addiu:
     movsx ebx, bx ; sign extend 16-bit imm in ebx
     add ebx, dword [processor + ecx * 4] ; add rs to ebx
     mov dword [processor + eax * 4], ebx ; store result in rt
-    jmp executeInstruction.exit ; return
+    ret ; return
 
 ; params: 
 ; ebx -> instruction
@@ -90,7 +90,7 @@ sll:
 
     shl ebx, cl ; ebx = rt << h
     mov dword [processor + eax * 4], ebx ; rd = ecx
-    jmp executeInstruction.exit ; return
+    ret ; return
 
 ; There's multiple instructions with the opcode 0x00
 ; They're all type-R ALU instructions

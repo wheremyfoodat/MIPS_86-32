@@ -18,7 +18,7 @@ lui:
     and eax, 0x1F
 
     mov word [processor + eax * 4 + 2], bx ; move the immediate into the top 16 bits of the register
-    jmp executeInstruction.exit
+    ret
 
 sw:
     mov eax, ebx ; copy instruction into eax
@@ -35,5 +35,5 @@ sw:
     add ebx, ecx
     call write32 ; store rt at (rs + offset)
 
-    jmp executeInstruction.exit
+    ret
 %endif
