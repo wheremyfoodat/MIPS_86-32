@@ -5,6 +5,7 @@
 %include "CPU\load_store.asm"
 %include "CPU\alu.asm"
 %include "CPU\branches.asm"
+%include "CPU\coprocessors\coprocessor.asm"
 
 extern _exit
 
@@ -13,7 +14,7 @@ section .data
     opcode_table: ; Jump table of opcodes
         dd alu_op_type_r, unknown_op, j, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op ; 0-7
         dd unknown_op, addiu, unknown_op, unknown_op, unknown_op, ori, unknown_op, lui ; 8-F
-        dd unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op ; 10-17
+        dd cop0_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op ; 10-17
         dd unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op ; 18-1F
         dd unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op ; 20-27
         dd unknown_op, unknown_op, unknown_op, sw, unknown_op, unknown_op, unknown_op, unknown_op ; 28-2F
