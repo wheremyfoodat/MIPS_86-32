@@ -3,6 +3,7 @@
 
 %include "include\cpu.inc"
 %include "CPU\cpu.asm"
+%include "CPU\exceptions.asm"
 extern _printf
 
 section .data
@@ -69,6 +70,26 @@ addiu:
     movsx ebx, bx ; sign extend 16-bit imm in ebx
     add ebx, dword [processor + ecx * 4] ; add rs to ebx
     mov dword [processor + eax * 4], ebx ; store result in rt
+    ret ; return
+
+; params: 
+; ebx -> instruction
+; not preserved: eax, ebx, ecx
+addi:
+    mov eax, ebx ; copy instruction into eax and ecx
+    mov ecx, ebx 
+
+    shr eax, 16 ; store index of rt into eax
+    and eax, 0x1F
+
+    shr ecx, 21 ; store index of rs into ecx
+    and ecx, 0x1F
+
+    movsx ebx, bx ; sign extend 16-bit imm in ebx
+    add ebx, dword [processor + ecx * 4] ; add rs to ebx
+    mov dword [processor + eax * 4], ebx ; store result in rt
+
+    jo throwException ; if yes, jump to overflow handler
     ret ; return
 
 ; params: 

@@ -30,11 +30,11 @@ mtc0:
     and eax, 0x1F
 
     shr ebx, 16 ; get rt index
-    and eax, 0x1F
+    and ebx, 0x1F
 
     push eax ; print a warning
     push 0
-    push dword [processor + eax * 4]
+    push dword [processor + ebx * 4]
     push cop_write_msg
     call _printf
     add esp, 16 ; clean up stack

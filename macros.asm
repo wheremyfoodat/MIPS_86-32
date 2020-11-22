@@ -56,7 +56,7 @@ readFail:
 
 ; prints the most important host regs
 %macro printRegs 0
-    push esp
+    push esp ; push all regs
     push ebp
     push edi
     push esi
@@ -64,8 +64,8 @@ readFail:
     push ecx
     push ebx
     push eax
-    push printRegsFmt
-    call _printf
+    push printRegsFmt ; push message string
+    call _printf ; print the message
     add esp, 36 ; clean up stack
 %endmacro
 %endif
