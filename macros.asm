@@ -5,11 +5,12 @@ extern _printf
 extern _fopen
 extern _fread
 
-section .bss:
+section .data:
 fileReadFailMsg: db "Failed to read file %s :(", 0xA, 0
 fileReadSuccessMsg: db "Successfully opened file %s! :)", 0xA, 0
 printRegsFmt: db "eax: %08X, ebx: %08X", 0xA, "ecx: %08X, edx: %08X", 0xA, "esi: %08X, edi: %08X", 0xA, "ebp: %08X, esp: %08X", 0xA, 0
 printMIPSRegsFmt:
+        db "pc: %08X", 0xA
         db "$zero: %08X, $at: %08X, $v0: %08X, $v1: %08X", 0xA
         db "$a0: %08X, $a1: %08X, $a2: %08X, $a3: %08X", 0xA
         db "$t0: %08X, $t1: %08X, $t2: %08X, $t3: %08X", 0xA
@@ -87,10 +88,11 @@ readFail:
     sub edx, 1
     jnc .loop
 
+    push dword [processor + pc]
     push printMIPSRegsFmt
     call _printf
 
-    add esp, 33 * 4 ; clean up stack
+    add esp, 34 * 4 ; clean up stack
     pop edx
 %endmacro
 

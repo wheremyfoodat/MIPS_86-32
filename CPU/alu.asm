@@ -12,7 +12,7 @@ section .data
 
     alu_opcode_table:
         dd sll, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op ; 0-7
-        dd unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op ; 8-F
+        dd jr, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op ; 8-F
         dd unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op ; 10-17
         dd unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op ; 18-1F
         dd unknown_op, addu, unknown_op, unknown_op, unknown_op, or, unknown_op, unknown_op ; 20-27

@@ -34,6 +34,17 @@ jal:
 
 ; params: 
 ; ebx -> instruction
+; not preserved: ebx
+jr:
+    shr ebx, 21 ; fetch rs index
+    and ebx, 0x1F
+    mov ebx, dword [processor + ebx * 4] ; fetch rs 
+
+    mov dword [processor + pc], ebx ; store it in PC
+    ret
+
+; params: 
+; ebx -> instruction
 ; not preserved: eax, ebx, ecx
 bne:
     mov eax, ebx ; copy instruction into eax and ecx

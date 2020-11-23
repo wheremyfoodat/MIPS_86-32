@@ -11,7 +11,7 @@ extern _printf
 extern _exit
 
 section .data
-    unknown_opcode_msg: db "Unknown opcode %08X", 0xA, 0
+    unknown_opcode_msg: db "Unknown instruction %08X Opcode %02X", 0xA, 0
     exception_error_msg: db "Attempted to throw exception!", 0xA, 0
     opcode_table: ; Jump table of opcodes
         dd alu_op_type_r, unknown_op, j, jal, unknown_op, bne, unknown_op, unknown_op ; 0-7
@@ -19,7 +19,7 @@ section .data
         dd cop0_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op ; 10-17
         dd unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op ; 18-1F
         dd unknown_op, unknown_op, unknown_op, lw, unknown_op, unknown_op, unknown_op, unknown_op ; 20-27
-        dd unknown_op, sh, unknown_op, sw, unknown_op, unknown_op, unknown_op, unknown_op ; 28-2F
+        dd sb, sh, unknown_op, sw, unknown_op, unknown_op, unknown_op, unknown_op ; 28-2F
         dd unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op ; 30-37
         dd unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op ; 38-3F
 
@@ -49,9 +49,12 @@ executeInstruction:
     jmp [opcode_table + eax * 4] ; jump to instruction handler
 
 unknown_op: ; unknown opcode handler
+    mov eax, ebx ; fetch opcode
+    shr eax, 26
+    push eax ; print opcode of instruction
     push ebx ; print unknown instruction
-    push unknown_opcode_msg 
-    call _printf
+    push unknown_opcode_msg
+    call _printf ; print message
     call _exit ; abort
 
 throw_exception:
