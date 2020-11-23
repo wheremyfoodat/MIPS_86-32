@@ -49,6 +49,7 @@ executeInstruction:
     jmp [opcode_table + eax * 4] ; jump to instruction handler
 
 unknown_op: ; unknown opcode handler
+    printMIPSRegs
     mov eax, ebx ; fetch opcode
     shr eax, 26
     push eax ; print opcode of instruction
