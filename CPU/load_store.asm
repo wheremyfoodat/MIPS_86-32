@@ -16,8 +16,9 @@ lui:
     mov eax, ebx ; copy instruction into eax
     shr eax, 16 ; fetch index of rt 
     and eax, 0x1F
+    shl ebx, 16 ; shift 16-bit immediate to the left
 
-    mov word [processor + eax * 4 + 2], bx ; move the immediate into the top 16 bits of the register
+    mov dword [processor + eax * 4], ebx ; move the immediate into the top 16 bits of the register
     ret
 
 ; params: 
@@ -37,6 +38,25 @@ sw:
     movsx ebx, bx ; sign extend the 16-bit immediate to 32 bits
     add ebx, ecx
     call write32 ; store rt at (rs + offset)
+    ret
+
+; params: 
+; ebx -> instruction
+; not preserved: eax, ebx, ecx
+sh:
+    mov eax, ebx ; copy instruction into eax
+    shr eax, 16 ; fetch index of rt 
+    and eax, 0x1F
+    mov eax, dword [processor + eax * 4] ; fetch rt
+
+    mov ecx, ebx ; copy instruction into ecx
+    shr ecx, 21 ; fetch index of rs
+    and ecx, 0x1F
+    mov ecx, dword [processor + ecx * 4] ; fetch rs
+
+    movsx ebx, bx ; sign extend the 16-bit immediate to 32 bits
+    add ebx, ecx
+    call write16 ; store rt at (rs + offset)
     ret
 
 ; params: 

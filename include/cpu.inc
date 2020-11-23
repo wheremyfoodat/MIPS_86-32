@@ -1,3 +1,5 @@
+$ra: equ 31 * 4 ; alias for return address register (r31)
+
 struc cop0_t
     pad1: resd 3
     bpc: resd 1

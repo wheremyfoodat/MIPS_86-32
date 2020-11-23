@@ -4,7 +4,8 @@
 %include "include\cpu.inc"
 %include "CPU\cpu.asm"
 %include "CPU\exceptions.asm"
-extern _printf
+%include "macros.asm"
+extern _exit
 
 section .data
     ori_msg: db "ORI $%d, %04X", 0xA, 0 ; For disassembly in the future 
@@ -14,11 +15,10 @@ section .data
         dd unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op ; 8-F
         dd unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op ; 10-17
         dd unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op ; 18-1F
-        dd unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, or, unknown_op, unknown_op ; 20-27
-        dd unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op ; 28-2F
+        dd unknown_op, addu, unknown_op, unknown_op, unknown_op, or, unknown_op, unknown_op ; 20-27
+        dd unknown_op, unknown_op, unknown_op, sltu, unknown_op, unknown_op, unknown_op, unknown_op ; 28-2F
         dd unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op ; 30-37
         dd unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op ; 38-3F
-
 
 section .text
 
@@ -45,6 +45,30 @@ or:
 
 ; params: 
 ; ebx -> instruction
+; not preserved: eax, ebx, ecx
+sltu:
+    mov eax, ebx ; copy instruction to eax and ecx
+    mov ecx, ebx
+
+    shr ebx, 21 ; set ebx to rs index
+    and ebx, 0x1F
+    mov ebx, dword [processor + ebx * 4] ; set ebx to rs
+
+    shr ecx, 16 ; set ecx to rt index
+    and ecx, 0x1F
+    
+    cmp ebx, dword [processor + ecx * 4] ; check if rs < rt
+    setb bl ; set ebx to 1 if rs < rt
+    movzx ebx, bl 
+
+    shr eax, 11
+    and eax, 0x1F ; set eax to rd index
+
+    mov dword [processor + eax * 4], ebx ; rd = ebx
+    ret ; return
+
+; params: 
+; ebx -> instruction
 ; not preserved: eax
 ori:
     mov eax, ebx ; copy instruction into eax
@@ -52,6 +76,39 @@ ori:
     and eax, 0x1F
 
     or word [processor + eax * 4], bx ; or low 12 bits of the register with imm
+    ret ; return
+
+; params: 
+; ebx -> instruction
+; not preserved: eax
+andi:
+    mov eax, ebx ; copy instruction into eax
+    shr eax, 16 ; fetch index of rt 
+    and eax, 0x1F
+    and ebx, 0xFFFF ; zero out top bits of ebx
+
+    and dword [processor + eax * 4], ebx ; or low 12 bits of the register with imm
+    ret ; return
+
+; params: 
+; ebx -> instruction
+; not preserved: eax, ebx, ecx
+addu:
+    mov eax, ebx ; copy instruction to eax and ecx
+    mov ecx, ebx
+
+    shr ebx, 21 ; set ebx to rs index
+    and ebx, 0x1F
+    mov ebx, dword [processor + ebx * 4] ; set ebx to rs
+
+    shr ecx, 16 ; set ecx to rt index
+    and ecx, 0x1F
+    add ebx, dword [processor + ecx * 4] ; ebx = rs + rt
+
+    shr eax, 11
+    and eax, 0x1F ; set eax to rd index
+
+    mov dword [processor + eax * 4], ebx ; rd = ebx
     ret ; return
 
 ; params: 

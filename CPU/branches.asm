@@ -21,6 +21,19 @@ j:
 
 ; params: 
 ; ebx -> instruction
+; not preserved: eax, ebx
+jal:
+    mov eax, dword [processor + pc] ; store ret address in $ra
+    mov dword [processor + $ra], eax
+
+    and dword [processor + pc], 0xF0000000 ; pc = pc & 0xF000'0000
+    and ebx, 0x3FFFFFF ; fetch 26-bit immediate
+    shl ebx, 2 ; shift imm by 2
+    or dword [processor + pc], ebx ; pc = pc | immediate
+    ret
+
+; params: 
+; ebx -> instruction
 ; not preserved: eax, ebx, ecx
 bne:
     mov eax, ebx ; copy instruction into eax and ecx

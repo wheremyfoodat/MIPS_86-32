@@ -9,6 +9,7 @@ extern _exit
 
 section .data
     read32_unknown_msg: db "32 bit read from unimplemented address %08X", 0xA, 0
+    write16_unknown_msg: db "16 bit write to unimplemented address %08X (value = %04X)", 0xA, 0
     write32_unknown_msg: db "32 bit write to unimplemented address %08X (value = %08X)", 0xA, 0
 
 section .bss
@@ -38,6 +39,23 @@ read32:
     jmp read32_unknown
 
 ; params:
+; eax -> 16-bit value to store
+; ebx -> address to write to
+write16:
+.checkIfKUSEGWRAM:
+    cmp ebx, 0x001FFFFF
+    ja .checkIfKSEG1WRAM
+    jmp write16_WRAM
+
+.checkIfKSEG1WRAM:
+    cmp ebx, 0xA0000000 ; if < 0xA000_0000, print error
+    jb write16_unknown
+    cmp ebx, 0xA01FFFFF ; if > 0xA01FFFFF, print error
+    ja write16_unknown
+
+    jmp write16_WRAM
+
+; params:
 ; eax -> 32-bit value to store
 ; ebx -> address to write to
 write32:
@@ -60,6 +78,11 @@ read32_WRAM:
     mov eax, dword [mem + WRAM + ebx] ; TODO: handle mirroring
     ret
 
+write16_WRAM:
+    and ebx, 0x001FFFFF ; TODO: Handle WRAM size regs
+    mov word [mem + WRAM + ebx], ax
+    ret
+
 write32_WRAM:
     and ebx, 0x001FFFFF ; TODO: Handle WRAM size regs
     mov dword [mem + WRAM + ebx], eax
@@ -78,11 +101,20 @@ read32_unknown:
     ; jmp read32.exit
     call _exit ; abort
 
+write16_unknown:
+    push eax
+    push ebx
+    push write16_unknown_msg
+    call _printf
+
+    add esp, 12
+    ret
+
 write32_unknown:
     push eax
     push ebx
     push write32_unknown_msg
     call _printf
 
-    add esp, 12 ; clean up stack
+    add esp, 12
     ret

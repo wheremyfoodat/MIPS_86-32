@@ -9,6 +9,15 @@ section .bss:
 fileReadFailMsg: db "Failed to read file %s :(", 0xA, 0
 fileReadSuccessMsg: db "Successfully opened file %s! :)", 0xA, 0
 printRegsFmt: db "eax: %08X, ebx: %08X", 0xA, "ecx: %08X, edx: %08X", 0xA, "esi: %08X, edi: %08X", 0xA, "ebp: %08X, esp: %08X", 0xA, 0
+printMIPSRegsFmt:
+        db "$zero: %08X, $at: %08X, $v0: %08X, $v1: %08X", 0xA
+        db "$a0: %08X, $a1: %08X, $a2: %08X, $a3: %08X", 0xA
+        db "$t0: %08X, $t1: %08X, $t2: %08X, $t3: %08X", 0xA
+        db "$t4: %08X, $t5: %08X, $t6: %08X, $t7: %08X", 0xA
+        db "$s0: %08X, $s1: %08X, $s2: %08X, $s3: %08X", 0xA
+        db "$s4: %08X, $s5: %08X, $s6: %08X, $s7: %08X", 0xA
+        db "$t8: %08X, $t9: %08X, $k0: %08X, $k1: %08X", 0xA
+        db "$gp: %08X, $sp: %08X, $fp: %08X, $ra: %08X", 0xA, 0
 
 section .text:
 ; fopens a file, and freads its contents into a buffer
@@ -68,4 +77,21 @@ readFail:
     call _printf ; print the message
     add esp, 36 ; clean up stack
 %endmacro
+
+; print CPU regs 0-31
+%macro printMIPSRegs 0 
+    push edx ; use edx as a loop counter
+    mov edx, 31
+.loop:
+    push dword [processor + edx * 4]
+    sub edx, 1
+    jnc .loop
+
+    push printMIPSRegsFmt
+    call _printf
+
+    add esp, 33 * 4 ; clean up stack
+    pop edx
+%endmacro
+
 %endif
