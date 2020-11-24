@@ -33,9 +33,9 @@ mtc0:
 
     shr ebx, 16 ; get rt index
     and ebx, 0x1F
-    ;mov ebx, dword [processor + ebx * 4]
+    mov ebx, dword [processor + ebx * 4]
     
-    ;mov dword [processor + cop0 + eax * 4], ebx
+    mov dword [processor + cop0 + eax * 4], ebx
 
     push eax ; print a warning
     push 0
@@ -50,11 +50,11 @@ mfc0:
     mov eax, ebx ; copy instruction into eax
     shr eax, 11  ; get coprocessor register to read from
     and eax, 0x1F
-    ;mov eax, dword [processor + cop0 + eax * 4]
+    mov eax, dword [processor + cop0 + eax * 4]
 
     shr ebx, 16 ; get rt index
     and ebx, 0x1F
-    ;mov dword [processor + ebx * 4], eax
+    mov dword [processor + ebx * 4], eax
 
     push eax ; print a warning
     push 0

@@ -74,8 +74,16 @@ read32:
 
 .checkIfWRAM: ; check eax < 0x1FFFFF
     cmp eax, 0x1FFFFF
-    ja .checkIfBIOS ; if > 0x1FFFFF, check if it belongs in the BIOS
+    ja .checkIfExpansion1 ; if > 0x1FFFFF, check if it belongs in the BIOS
     jmp read32_WRAM
+
+.checkIfExpansion1:
+    cmp eax, 0x1F000000 ; if addr < 0x1F000000 throw error
+    jb read8_unknown
+    cmp eax, 0x1F7FFFFF ; if addr > 0x1F7FFFF, check if BIOS
+    ja .checkIfBIOS
+    mov eax, 0xFFFFFFFF ; If addr is in expansion 1, return 0xFF
+    ret 
 
 .checkIfBIOS:
     cmp eax, 0x1FC00000 ; check if 0x1FC00000 <= eax <= 0x17C7FFFF

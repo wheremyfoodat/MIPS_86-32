@@ -15,6 +15,7 @@ section .text
 ; ebx -> instruction
 ; not preserved: ebx
 j:
+    call check_if_branch_in_delay_slot
     and dword [processor + pc], 0xF0000000 ; pc = pc & 0xF000'0000
     and ebx, 0x3FFFFFF ; fetch 26-bit immediate
     shl ebx, 2 ; shift imm by 2
@@ -25,6 +26,7 @@ j:
 ; ebx -> instruction
 ; not preserved: eax, ebx
 jal:
+    call check_if_branch_in_delay_slot
     mov eax, dword [processor + pc] ; store ret address in $ra
     mov dword [processor + $ra], eax
 
@@ -38,6 +40,7 @@ jal:
 ; ebx -> instruction
 ; not preserved: ebx
 jr:
+    call check_if_branch_in_delay_slot
     shr ebx, 21 ; fetch rs index
     and ebx, 0x1F
     mov ebx, dword [processor + ebx * 4] ; fetch rs 
@@ -85,11 +88,40 @@ beq:
 ; ebx -> instruction (bx = imm)
 ; not preserved -> ebx
 branch:
+    call check_if_branch_in_delay_slot
     movsx ebx, bx ; sign extend imm to 32 bits
     shl ebx, 2 ; multiply by 4 (to enforce alignment)
     add dword [processor + pc], ebx ; add signed offset to pc
     sub dword [processor + pc], 4   ; I increment PC by 4 after every instruction, including branches. This just undoes that
                                     ; TODO: Optimize this out
+    ret
+
+check_if_branch_in_delay_slot: ; TODO: Remove this and properly implement branches in d-slots
+    push ecx
+    push edx
+
+    mov edx, dword [processor + nextInstruction] ; fetch delay slot instruction
+    mov ecx, edx
+
+    shr edx, 26 ; get opcode
+    
+    cmp edx, 2
+    jb .part_2_electric_boogaloo
+    cmp edx, 7
+    ja .part_2_electric_boogaloo
+    jmp branch_in_delay_slot
+
+.part_2_electric_boogaloo:
+    cmp edx, 0 ; check if it's one of the jumps with opcode == 0
+    jne .exit
+
+    and ecx, 0x3F 
+    cmp ecx, 0x8 ; check if JR
+    jz branch_in_delay_slot
+
+.exit: 
+    pop edx
+    pop ecx
     ret
 
 branch_in_delay_slot: ; if there's a branch in a branch delay slot, panic

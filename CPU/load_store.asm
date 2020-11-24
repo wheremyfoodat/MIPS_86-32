@@ -8,8 +8,15 @@
 
 section .data
     lui_msg: db "LUI $%d, %04X", 0xA, 0 ; For disassembly in the future
+    cache_isolation_msg: db "[Bus][Warning] Tried to access memory while cache isolated", 0xA, 0
 
 section .text
+
+cacheIsolationError: ; happens when the CPU accesses main memory with cache isolated
+    push cache_isolation_msg 
+    call _printf
+    add esp, 4
+    ret
 
 ; params: 
 ; ebx -> instruction
@@ -27,6 +34,9 @@ lui:
 ; ebx -> instruction
 ; not preserved: eax, ebx, ecx
 sw:
+    test dword [processor + cop0 + sr], 0x10000 ; check cache isolation bit
+    jnz cacheIsolationError
+
     mov eax, ebx ; copy instruction into eax
     shr eax, 16 ; fetch index of rt 
     and eax, 0x1F
@@ -39,12 +49,16 @@ sw:
     movsx ebx, bx ; sign extend the 16-bit immediate to 32 bits
     add ebx, dword [processor + ecx * 4]
     call write32 ; store rt at (rs + offset)
+.exit:
     ret
 
 ; params: 
 ; ebx -> instruction
 ; not preserved: eax, ebx, ecx
 sh:
+    test dword [processor + cop0 + sr], 0x10000 ; check cache isolation bit
+    jnz cacheIsolationError
+
     mov eax, ebx ; copy instruction into eax
     shr eax, 16 ; fetch index of rt 
     and eax, 0x1F
@@ -63,6 +77,9 @@ sh:
 ; ebx -> instruction
 ; not preserved: eax, ebx, ecx
 sb:
+    test dword [processor + cop0 + sr], 0x10000 ; check cache isolation bit
+    jnz cacheIsolationError
+
     mov eax, ebx ; copy instruction into eax
     shr eax, 16 ; fetch index of rt 
     and eax, 0x1F
@@ -81,6 +98,9 @@ sb:
 ; ebx -> instruction
 ; not preserved: eax, ebx, ecx
 lb:
+    test dword [processor + cop0 + sr], 0x10000 ; check cache isolation bit
+    jnz cacheIsolationError
+
     mov eax, ebx ; copy instruction into eax, ecx
     mov ecx, ebx 
 
@@ -101,6 +121,9 @@ lb:
 ; ebx -> instruction
 ; not preserved: eax, ebx, ecx
 lw:
+    test dword [processor + cop0 + sr], 0x10000 ; check cache isolation bit
+    jnz cacheIsolationError
+
     mov eax, ebx ; copy instruction into eax, ecx
     mov ecx, ebx 
 

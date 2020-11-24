@@ -88,6 +88,7 @@ readFail:
     ; print CPU regs 0-31 && pc
 %macro printMIPSRegs 0 
     pushall
+    sub dword [processor + pc], 8 ; hack for logging
     mov edx, 32
 .loop:
     dec edx
@@ -99,6 +100,7 @@ readFail:
     call _printf
 
     add esp, (34 * 4) ; clean up stack
+    add dword [processor + pc], 8
     popall
     %endmacro
 %endif
