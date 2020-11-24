@@ -1,3 +1,4 @@
+; TODO: Use macros here
 %ifndef BRANCHES_ASM
 %define BRANCHES_ASM
 
@@ -6,6 +7,7 @@
 
 section .data
     j_msg: db "j %07X", 0xA, 0 ; For disassembly in the future
+    branch_in_delay_slot_msg: db "Encountered a branch in a branch delay slot! Aborting!", 0xA, 0
 
 section .text
 
@@ -61,6 +63,24 @@ bne:
     jne branch ; if they're not equal, jump to the branch handler
     ret
 
+; params: 
+; ebx -> instruction
+; not preserved: eax, ebx, ecx
+beq:
+    mov eax, ebx ; copy instruction into eax and ecx
+    mov ecx, ebx
+
+    shr eax, 16 ; store rt into eax
+    and eax, 0x1F
+    mov eax, dword [processor + eax * 4]
+
+    shr ecx, 21 ; store the index of rs in ecx
+    and ecx, 0x1F
+
+    cmp eax, dword [processor + ecx * 4] ; compare rs and rt
+    je branch ; if they're not equal, jump to the branch handler
+    ret
+
 ; params:
 ; ebx -> instruction (bx = imm)
 ; not preserved -> ebx
@@ -71,4 +91,10 @@ branch:
     sub dword [processor + pc], 4   ; I increment PC by 4 after every instruction, including branches. This just undoes that
                                     ; TODO: Optimize this out
     ret
+
+branch_in_delay_slot: ; if there's a branch in a branch delay slot, panic
+    push branch_in_delay_slot_msg
+    call _printf
+    add esp, 4
+    call _exit
 %endif

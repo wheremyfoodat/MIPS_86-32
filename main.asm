@@ -17,6 +17,8 @@ section .bss
 
 section .text
 _main:
+    sub esp, 2048
+
     call init_mem
     call init_cpu
 
@@ -29,5 +31,6 @@ _main:
     call executeInstruction
     jmp .emulationLoop
 
+    add esp, 2048
     xor eax, eax ; return code
     ret 

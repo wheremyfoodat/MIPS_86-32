@@ -1,3 +1,4 @@
+; TODO: Use macros here
 %ifndef ALU_ASM
 %define ALU_ASM
 
@@ -15,7 +16,7 @@ section .data
         dd jr, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op ; 8-F
         dd unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op ; 10-17
         dd unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op ; 18-1F
-        dd unknown_op, addu, unknown_op, unknown_op, unknown_op, or, unknown_op, unknown_op ; 20-27
+        dd add, addu, unknown_op, unknown_op, and, or, unknown_op, unknown_op ; 20-27
         dd unknown_op, unknown_op, unknown_op, sltu, unknown_op, unknown_op, unknown_op, unknown_op ; 28-2F
         dd unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op ; 30-37
         dd unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op ; 38-3F
@@ -35,12 +36,33 @@ or:
 
     shr ecx, 16 ; set ecx to rt index
     and ecx, 0x1F
-    or ebx, dword [processor + ecx * 4] ; ebx |= ecx
+    or ebx, dword [processor + ecx * 4] ; ebx |= rt
 
     shr eax, 11
     and eax, 0x1F ; set eax to rd index
 
-    mov dword [processor + eax * 4], ebx ; rd = ecx
+    mov dword [processor + eax * 4], ebx ; rd = ebx
+    ret ; return
+
+; params: 
+; ebx -> instruction
+; not preserved: eax, ebx, ecx
+and:
+    mov eax, ebx ; copy instruction to eax and ecx
+    mov ecx, ebx
+
+    shr ebx, 21 ; set ebx to rs index
+    and ebx, 0x1F
+    mov ebx, dword [processor + ebx * 4] ; set ebx to rs
+
+    shr ecx, 16 ; set ecx to rt index
+    and ecx, 0x1F
+    and ebx, dword [processor + ecx * 4] ; ebx &= ecx
+
+    shr eax, 11
+    and eax, 0x1F ; set eax to rd index
+
+    mov dword [processor + eax * 4], ebx ; rd = ebx
     ret ; return
 
 ; params: 
@@ -69,25 +91,40 @@ sltu:
 
 ; params: 
 ; ebx -> instruction
-; not preserved: eax
+; not preserved: eax, ebx, ecx
 ori:
     mov eax, ebx ; copy instruction into eax
+    mov ecx, ebx ; copy instruction into ecx
+
+    shr ecx, 21 ; fetch index of rs
+    and ecx, 0x1F
+    
     shr eax, 16 ; fetch index of rt 
     and eax, 0x1F
 
-    or word [processor + eax * 4], bx ; or low 12 bits of the register with imm
+    and ebx, 0xFFFF ; zero out top bits of ebx
+    or ebx, dword [processor + ecx * 4]; imm |= rs
+
+    mov dword [processor + eax * 4], ebx ; rt = imm
     ret ; return
 
 ; params: 
 ; ebx -> instruction
-; not preserved: eax
+; not preserved: eax, ebx, ecx
 andi:
     mov eax, ebx ; copy instruction into eax
+    mov ecx, ebx ; copy instruction into ecx
+
+    shr ecx, 21 ; fetch index of rs
+    and ecx, 0x1F
+    
     shr eax, 16 ; fetch index of rt 
     and eax, 0x1F
-    and ebx, 0xFFFF ; zero out top bits of ebx
 
-    and dword [processor + eax * 4], ebx ; or low 12 bits of the register with imm
+    and ebx, 0xFFFF ; zero out top bits of ebx
+    and ebx, dword [processor + ecx * 4]; imm &= rs
+
+    mov dword [processor + eax * 4], ebx ; rt = imm
     ret ; return
 
 ; params: 
@@ -109,6 +146,28 @@ addu:
     and eax, 0x1F ; set eax to rd index
 
     mov dword [processor + eax * 4], ebx ; rd = ebx
+    ret ; return
+
+; params: 
+; ebx -> instruction
+; not preserved: eax, ebx, ecx
+add:
+    mov eax, ebx ; copy instruction to eax and ecx
+    mov ecx, ebx
+
+    shr ebx, 21 ; set ebx to rs index
+    and ebx, 0x1F
+    mov ebx, dword [processor + ebx * 4] ; set ebx to rs
+
+    shr eax, 11
+    and eax, 0x1F ; set eax to rd index
+
+    shr ecx, 16 ; set ecx to rt index
+    and ecx, 0x1F
+    add ebx, dword [processor + ecx * 4] ; ebx = rs + rt
+
+    mov dword [processor + eax * 4], ebx ; rd = ebx
+    jo throwException ; if an exception occured, throw it
     ret ; return
 
 ; params: 
@@ -163,7 +222,7 @@ sll:
     shr eax, 11
     and eax, 0x1F ; set eax to rd index
     
-    shr ecx, 6
+    shr ecx, 6 ; get shift offset
     and ecx, 0x1F
 
     shl ebx, cl ; ebx = rt << h

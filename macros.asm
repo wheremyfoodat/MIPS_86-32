@@ -46,6 +46,27 @@ section .text:
     add esp, 16 ; clean up stack
 %endmacro
 
+
+%macro pushall 0 ; pusha is deprecated in x64. I use this instead of pusha so that I can port to x64 
+    push ebp
+    push edi
+    push esi
+    push edx
+    push ecx
+    push ebx
+    push eax
+%endmacro
+
+%macro popall 0 ; popa is deprecated in x64. I use this instead of pusha so that I can port to x64 
+    pop eax
+    pop ebx
+    pop ecx
+    pop edx
+    pop esi
+    pop edi
+    pop ebp
+%endmacro
+
 ; params:
 ; eax -> file name
 ; ebx -> file descriptor
@@ -64,36 +85,20 @@ readFail:
     add esp, 8 ; clean up stack
     ret
 
-; prints the most important host regs
-%macro printRegs 0
-    push esp ; push all regs
-    push ebp
-    push edi
-    push esi
-    push edx
-    push ecx
-    push ebx
-    push eax
-    push printRegsFmt ; push message string
-    call _printf ; print the message
-    add esp, 36 ; clean up stack
-%endmacro
-
-; print CPU regs 0-31
+    ; print CPU regs 0-31 && pc
 %macro printMIPSRegs 0 
-    push edx ; use edx as a loop counter
-    mov edx, 31
+    pushall
+    mov edx, 32
 .loop:
+    dec edx
     push dword [processor + edx * 4]
-    sub edx, 1
-    jnc .loop
+    jnz .loop
 
     push dword [processor + pc]
     push printMIPSRegsFmt
     call _printf
 
-    add esp, 34 * 4 ; clean up stack
-    pop edx
-%endmacro
-
+    add esp, (34 * 4) ; clean up stack
+    popall
+    %endmacro
 %endif

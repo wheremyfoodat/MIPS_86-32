@@ -1,13 +1,14 @@
 %include "include\memory.inc"
 %include "macros.asm"
 
-; TODO: Use a jump table for loads
-; TODO: handle masking
+; TODO: handle mirroring
 ; TODO: Optimize range checking
-; TODO: Handle KUSEG/KSEG0/KSEG1 in a way that makes sense
+; TODO: Use macros for functions instead of huge handwritten subroutines
+; TODO: Bake the memory read/write subroutines inside of read/write 8/16/32 instead of having them be separate? (-1 JMP per access)
 extern _exit
 
 section .data
+    read8_unknown_msg:  db "8-bit read from unimplemented address %08X", 0xA, 0
     read32_unknown_msg: db "32 bit read from unimplemented address %08X", 0xA, 0
     write8_unknown_msg: db "8 bit write to unimplemented address %08X (value = %02X)", 0xA, 0
     write16_unknown_msg: db "16 bit write to unimplemented address %08X (value = %04X)", 0xA, 0
@@ -28,6 +29,37 @@ section .text
 init_mem:
     readFileIntoBuffer BIOSDirectory, filePermissions, 512 * KILOBYTE, 1, mem + BIOS
     ret
+
+; params: 
+; eax -> address to read word from
+; returns:
+; eax -> word at that address
+; corrupted: esi
+read8:
+    mov esi, eax ; move address to esi
+    shr esi, 29 ; apply the region mask to addr
+    mov esi, dword [region_masks + esi * 4]
+    and eax, esi ; AND address with region mask
+
+.checkIfWRAM: ; check eax < 0x1FFFFF
+    cmp eax, 0x1FFFFF
+    ja .checkIfExpansion1 ; if > 0x1FFFFF, check if it belongs in Expansion 1
+    jmp read8_WRAM
+
+.checkIfExpansion1:
+    cmp eax, 0x1F000000 ; if addr < 0x1F000000 throw error
+    jb read8_unknown
+    cmp eax, 0x1F7FFFFF ; if addr > 0x1F7FFFF, check if BIOS
+    ja .checkIfBIOS
+    mov eax, 0xFF ; If addr is in expansion 1, return 0xFF
+    ret 
+
+.checkIfBIOS:
+    cmp eax, 0x1FC00000 ; check if 0x1FC00000 <= eax <= 0x17C7FFFF
+    jb read8_unknown   ; if so, jump to unknown read handler
+    cmp eax, 0x1FC7FFFF
+    ja read8_unknown
+    jmp read8_BIOS
 
 ; params: 
 ; eax -> address to read word from
@@ -94,9 +126,15 @@ write32:
     ja write32_unknown
     jmp write32_WRAM
 
+read8_WRAM:
+    and eax, 0x001FFFFF ; TODO: Handle WRAM size regs
+    mov al, byte [mem + WRAM + eax] ; TODO: handle mirroring properly
+    movzx eax, al ; zero extend the value into eax
+    ret
+
 read32_WRAM:
     and eax, 0x001FFFFF ; TODO: Handle WRAM size regs
-    mov eax, dword [mem + WRAM + eax] ; TODO: handle mirroring
+    mov eax, dword [mem + WRAM + eax] ; TODO: handle mirroring properly
     ret
 
 write8_WRAM:
@@ -114,19 +152,32 @@ write32_WRAM:
     mov dword [mem + WRAM + ebx], eax
     ret
 
+read8_BIOS:
+    sub eax, 0x1FC00000 ; TODO: Use a mask instead (?)
+    mov al, byte [mem + BIOS + eax]
+    movzx eax, al ; zero extend loaded value into eax
+    ret
+
 read32_BIOS:
     sub eax, 0x1FC00000 ; TODO: Use a mask instead (?)
     mov eax, dword [mem + BIOS + eax]
     ret
 
-read32_unknown:
-    
+read8_unknown:
+    printMIPSRegs
+    push eax ; print error message
+    push read8_unknown_msg
+    call _printf
+    add esp, 8 ; clean up stack
+    call _exit
+
+read32_unknown:    
+    printMIPSRegs
     push eax ; print error message
     push read32_unknown_msg
     call _printf
     add esp, 8 ; clean up stack
     ; ret
-    printMIPSRegs
     call _exit ; abort
 
 write8_unknown:

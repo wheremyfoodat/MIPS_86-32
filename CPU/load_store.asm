@@ -1,3 +1,5 @@
+; TODO: Use macros here
+
 %ifndef LOAD_STORE_ASM
 %define LOAD_STORE_ASM
 
@@ -33,10 +35,9 @@ sw:
     mov ecx, ebx ; copy instruction into ecx
     shr ecx, 21 ; fetch index of rs
     and ecx, 0x1F
-    mov ecx, dword [processor + ecx * 4] ; fetch rs
 
     movsx ebx, bx ; sign extend the 16-bit immediate to 32 bits
-    add ebx, ecx
+    add ebx, dword [processor + ecx * 4]
     call write32 ; store rt at (rs + offset)
     ret
 
@@ -52,10 +53,9 @@ sh:
     mov ecx, ebx ; copy instruction into ecx
     shr ecx, 21 ; fetch index of rs
     and ecx, 0x1F
-    mov ecx, dword [processor + ecx * 4] ; fetch rs
 
     movsx ebx, bx ; sign extend the 16-bit immediate to 32 bits
-    add ebx, ecx
+    add ebx, dword [processor + ecx * 4]
     call write16 ; store rt at (rs + offset)
     ret
 
@@ -71,18 +71,37 @@ sb:
     mov ecx, ebx ; copy instruction into ecx
     shr ecx, 21 ; fetch index of rs
     and ecx, 0x1F
-    mov ecx, dword [processor + ecx * 4] ; fetch rs
 
     movsx ebx, bx ; sign extend the 16-bit immediate to 32 bits
-    add ebx, ecx
+    add ebx, dword [processor + ecx * 4]
     call write8 ; store rt at (rs + offset)
     ret
 
 ; params: 
 ; ebx -> instruction
-; not preserved: eax, ebx, ecx, edx 
+; not preserved: eax, ebx, ecx
+lb:
+    mov eax, ebx ; copy instruction into eax, ecx
+    mov ecx, ebx 
+
+    shr ecx, 16 ; fetch index of rt 
+    and ecx, 0x1F
+
+    shr eax, 21 ; fetch index of rs
+    and eax, 0x1F
+    mov eax, dword [processor + eax * 4] ; fetch rs
+
+    movsx ebx, bx ; sign extend the 16-bit immediate to 32 bits
+    add eax, ebx
+    call read8 ; load byte from (rs + offset) into eax
+    mov dword [processor + ecx * 4], eax ; store it into rt
+    ret
+
+; params: 
+; ebx -> instruction
+; not preserved: eax, ebx, ecx
 lw:
-    mov eax, ebx ; copy instruction into eax, ecx and edx
+    mov eax, ebx ; copy instruction into eax, ecx
     mov ecx, ebx 
 
     shr ecx, 16 ; fetch index of rt 

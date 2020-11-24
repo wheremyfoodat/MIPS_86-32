@@ -14,11 +14,11 @@ section .data
     unknown_opcode_msg: db "Unknown instruction %08X Opcode %02X", 0xA, 0
     exception_error_msg: db "Attempted to throw exception!", 0xA, 0
     opcode_table: ; Jump table of opcodes
-        dd alu_op_type_r, unknown_op, j, jal, unknown_op, bne, unknown_op, unknown_op ; 0-7
+        dd alu_op_type_r, unknown_op, j, jal, beq, bne, unknown_op, unknown_op ; 0-7
         dd addi, addiu, unknown_op, unknown_op, andi, ori, unknown_op, lui ; 8-F
         dd cop0_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op ; 10-17
         dd unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op ; 18-1F
-        dd unknown_op, unknown_op, unknown_op, lw, unknown_op, unknown_op, unknown_op, unknown_op ; 20-27
+        dd lb, unknown_op, unknown_op, lw, unknown_op, unknown_op, unknown_op, unknown_op ; 20-27
         dd sb, sh, unknown_op, sw, unknown_op, unknown_op, unknown_op, unknown_op ; 28-2F
         dd unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op ; 30-37
         dd unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op ; 38-3F
@@ -36,6 +36,7 @@ init_cpu:
 ; sets eax to the opcode and ebx to the instruction
 ; then jumps to the instruction handler
 executeInstruction:
+    ; printMIPSRegs
     mov dword [processor + GPRs], 0 ; set $zero to 0
     mov ebx, dword [processor + nextInstruction] ; read the instruction to be executed into ebx
     mov eax, dword [processor + pc] ; read 32 bits from mem[pc]
