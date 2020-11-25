@@ -121,6 +121,29 @@ lb:
 ; params: 
 ; ebx -> instruction
 ; not preserved: eax, ebx, ecx
+lbu: ; literally LB without sign extension
+    test dword [processor + cop0 + sr], 0x10000 ; check cache isolation bit
+    jnz cacheIsolationError
+
+    mov eax, ebx ; copy instruction into eax, ecx
+    mov ecx, ebx 
+
+    shr ecx, 16 ; fetch index of rt 
+    and ecx, 0x1F
+
+    shr eax, 21 ; fetch index of rs
+    and eax, 0x1F
+    mov eax, dword [processor + eax * 4] ; fetch rs
+
+    movsx ebx, bx ; sign extend the 16-bit immediate to 32 bits
+    add eax, ebx
+    call read8 ; load byte from (rs + offset) into eax
+    mov dword [processor + ecx * 4], eax ; store it into rt
+    ret
+
+; params: 
+; ebx -> instruction
+; not preserved: eax, ebx, ecx
 lw:
     test dword [processor + cop0 + sr], 0x10000 ; check cache isolation bit
     jnz cacheIsolationError

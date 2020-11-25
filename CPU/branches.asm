@@ -33,7 +33,26 @@ jal:
     and dword [processor + pc], 0xF0000000 ; pc = pc & 0xF000'0000
     and ebx, 0x3FFFFFF ; fetch 26-bit immediate
     shl ebx, 2 ; shift imm by 2
-    or dword [processor + pc], ebx ; pc = pc | immediate
+    or dword [processor + pc], ebx ; pc |= immediate
+    ret
+
+; params: 
+; ebx -> instruction
+; not preserved: eax, ebx
+jalr:
+    call check_if_branch_in_delay_slot
+    mov ecx, ebx ; copy instruction in ecx
+    shr ecx, 11 ; get rd index
+    and ecx, 0x1F
+    
+    shr ebx, 21 ; get rs
+    and ebx, 0x1F
+    mov ebx, dword [processor + ebx * 4]
+
+    mov eax, dword [processor + pc] ; fetch ret address
+    mov dword [processor + ecx * 4], eax ; store ret address in rd
+
+    mov dword [processor + pc], ebx ; store rs in PC
     ret
 
 ; params: 
@@ -84,6 +103,64 @@ beq:
     je branch ; if they're not equal, jump to the branch handler
     ret
 
+; params: 
+; ebx -> instruction
+; not preserved: eax, ebx
+bgtz:
+    mov eax, ebx ; copy instruction into eax
+    shr eax, 21 ; get rs index
+    and eax, 0x3F
+    cmp dword [processor + eax * 4], 0 ; check if rs > 0 (signed)
+    jg branch ; if it is, branch
+    ret ; if it is not, ret
+
+; params: 
+; ebx -> instruction
+; not preserved: eax, ebx
+blez:
+    mov eax, ebx ; copy instruction into eax
+    shr eax, 21 ; get rs index
+    and eax, 0x3F
+    cmp dword [processor + eax * 4], 0 ; check if rs is <= 0 (signed)
+    jle branch ; if it is 0, branch
+    ret ; if it is not, ret
+
+; params: 
+; ebx -> instruction
+; not preserved: eax, ebx, ecx, edx
+bxx: ; BLTZ/BLTZAL/BGEZ/BGEZAL
+    mov eax, ebx ; copy instruction to eax and ecx
+    mov ecx, ebx 
+
+    shr ecx, 21 ; get rs
+    and ecx, 0x3F
+    mov ecx, dword [processor + ecx * 4]
+
+    shr eax, 17 ; see if should link
+    and eax, 0xF
+    cmp eax, 8
+    je .link
+
+.branch:
+    test ebx, 0x10000
+    jnz bgez ; if bit 16 is true, execute BGEZ
+    jmp bltz ; else execute BLTZ
+
+.link:
+    mov edx, dword [processor + pc] ; get ret addr
+    mov [processor + $ra], edx ; store in $ra
+    jmp .branch ; return
+
+bgez: ; rs is in ecx (thanks to the bxx function)
+    cmp ecx, 0
+    jge branch ; if >= 0, branch
+    ret ; else ret
+
+bltz: ; rs is in ecx (thanks to the bxx function)
+    cmp ecx, 0
+    jl branch ; if < 0, branch
+    ret
+
 ; params:
 ; ebx -> instruction (bx = imm)
 ; not preserved -> ebx
@@ -117,6 +194,8 @@ check_if_branch_in_delay_slot: ; TODO: Remove this and properly implement branch
 
     and ecx, 0x3F 
     cmp ecx, 0x8 ; check if JR
+    jz branch_in_delay_slot
+    cmp ecx, 0x9 ; check if JALR
     jz branch_in_delay_slot
 
 .exit: 

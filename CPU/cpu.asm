@@ -14,11 +14,11 @@ section .data
     unknown_opcode_msg: db "Unknown instruction %08X Opcode %02X", 0xA, 0
     exception_error_msg: db "Attempted to throw exception!", 0xA, 0
     opcode_table: ; Jump table of opcodes
-        dd alu_op_type_r, unknown_op, j, jal, beq, bne, unknown_op, unknown_op ; 0-7
+        dd alu_op_type_r, bxx, j, jal, beq, bne, blez, bgtz ; 0-7
         dd addi, addiu, unknown_op, unknown_op, andi, ori, unknown_op, lui ; 8-F
         dd cop0_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op ; 10-17
         dd unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op ; 18-1F
-        dd lb, unknown_op, unknown_op, lw, unknown_op, unknown_op, unknown_op, unknown_op ; 20-27
+        dd lb, unknown_op, unknown_op, lw, lbu, unknown_op, unknown_op, unknown_op ; 20-27
         dd sb, sh, unknown_op, sw, unknown_op, unknown_op, unknown_op, unknown_op ; 28-2F
         dd unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op ; 30-37
         dd unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op ; 38-3F
