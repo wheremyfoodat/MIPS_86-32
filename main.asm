@@ -18,7 +18,6 @@ _main:
     call init_cpu
 
 .emulationLoop:
-    ;printMIPSRegs
     call executeInstruction
     jmp .emulationLoop
 

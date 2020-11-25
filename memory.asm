@@ -13,6 +13,7 @@ section .data
     write8_unknown_msg: db "8 bit write to unimplemented address %08X (value = %02X)", 0xA, 0
     write16_unknown_msg: db "16 bit write to unimplemented address %08X (value = %04X)", 0xA, 0
     write32_unknown_msg: db "32 bit write to unimplemented address %08X (value = %08X)", 0xA, 0
+    debug_msg_remove_later: db "Wrote %08X to WRAM at address %08X (pc = %08X)", 0xA, 0
 
 region_masks: ; for handling KUSEG/KSEG0/KSEG1/KSEG2
     dd 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF ; KUSEG (2048MB)
@@ -136,8 +137,7 @@ write32:
 
 read8_WRAM:
     and eax, 0x001FFFFF ; TODO: Handle WRAM size regs
-    mov al, byte [mem + WRAM + eax] ; TODO: handle mirroring properly
-    movzx eax, al ; zero extend the value into eax
+    movzx eax, byte [mem + WRAM + eax] ; TODO: handle mirroring properly
     ret
 
 read32_WRAM:
@@ -162,8 +162,7 @@ write32_WRAM:
 
 read8_BIOS:
     sub eax, 0x1FC00000 ; TODO: Use a mask instead (?)
-    mov al, byte [mem + BIOS + eax]
-    movzx eax, al ; zero extend loaded value into eax
+    movzx eax, byte [mem + BIOS + eax]
     ret
 
 read32_BIOS:

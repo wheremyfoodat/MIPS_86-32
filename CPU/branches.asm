@@ -109,7 +109,7 @@ check_if_branch_in_delay_slot: ; TODO: Remove this and properly implement branch
     jb .part_2_electric_boogaloo
     cmp edx, 7
     ja .part_2_electric_boogaloo
-    jmp branch_in_delay_slot
+    jmp branch_in_delay_slot 
 
 .part_2_electric_boogaloo:
     cmp edx, 0 ; check if it's one of the jumps with opcode == 0

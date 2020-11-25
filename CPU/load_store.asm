@@ -49,7 +49,7 @@ sw:
     movsx ebx, bx ; sign extend the 16-bit immediate to 32 bits
     add ebx, dword [processor + ecx * 4]
     call write32 ; store rt at (rs + offset)
-.exit:
+
     ret
 
 ; params: 
@@ -114,6 +114,7 @@ lb:
     movsx ebx, bx ; sign extend the 16-bit immediate to 32 bits
     add eax, ebx
     call read8 ; load byte from (rs + offset) into eax
+    movsx eax, al ; sign extend 8-bit value to 32-bits
     mov dword [processor + ecx * 4], eax ; store it into rt
     ret
 
@@ -139,6 +140,5 @@ lw:
     call read32 ; load word from (rs + offset) into eax
     mov dword [processor + ecx * 4], eax ; store it into rt
     ret
-
 
 %endif

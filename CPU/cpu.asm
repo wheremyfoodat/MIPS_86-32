@@ -22,6 +22,7 @@ section .data
         dd sb, sh, unknown_op, sw, unknown_op, unknown_op, unknown_op, unknown_op ; 28-2F
         dd unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op ; 30-37
         dd unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op ; 38-3F
+    print_char_msg: db "%c", 0
 
 section .bss
     processor: resb MIPS_size
@@ -36,7 +37,6 @@ init_cpu:
 ; sets eax to the opcode and ebx to the instruction
 ; then jumps to the instruction handler
 executeInstruction:
-    ; printMIPSRegs
     mov dword [processor + GPRs], 0 ; set $zero to 0
     mov ebx, dword [processor + nextInstruction] ; read the instruction to be executed into ebx
     mov eax, dword [processor + pc] ; read 32 bits from mem[pc]
@@ -47,6 +47,19 @@ executeInstruction:
     mov eax, ebx ; copy instruction to eax
     shr eax, 26 ; get opcode
 
+    ;cmp dword [processor + pc], 0xB0 <- For BIOS logging purposes. Ignore this
+    ;jne exit
+    ;cmp dword [processor + 9 * 4], 0x3D
+    ;jne exit
+
+    ;pusha
+    ;push dword [processor + 4 * 4]
+    ;push dword print_char_msg
+    ;call _printf
+    ;add esp, 8
+    ;popa
+
+exit:
     jmp [opcode_table + eax * 4] ; jump to instruction handler
 
 unknown_op: ; unknown opcode handler
