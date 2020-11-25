@@ -15,7 +15,7 @@ section .data
     exception_error_msg: db "Attempted to throw exception!", 0xA, 0
     opcode_table: ; Jump table of opcodes
         dd alu_op_type_r, bxx, j, jal, beq, bne, blez, bgtz ; 0-7
-        dd addi, addiu, unknown_op, unknown_op, andi, ori, unknown_op, lui ; 8-F
+        dd addi, addiu, slti, sltiu, andi, ori, unknown_op, lui ; 8-F
         dd cop0_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op ; 10-17
         dd unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op, unknown_op ; 18-1F
         dd lb, unknown_op, unknown_op, lw, lbu, unknown_op, unknown_op, unknown_op ; 20-27

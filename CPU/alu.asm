@@ -92,6 +92,48 @@ sltu:
 ; params: 
 ; ebx -> instruction
 ; not preserved: eax, ebx, ecx
+sltiu:
+    mov eax, ebx ; copy instruction into eax
+    mov ecx, ebx ; copy instruction into ecx
+
+    shr ecx, 21 ; fetch index of rs
+    and ecx, 0x1F
+    
+    shr eax, 16 ; fetch index of rt 
+    and eax, 0x1F
+
+    movsx ebx, bx ; sign extend 16-bit immediate
+    cmp dword [processor + ecx * 4], ebx ; check if rs < imm (unsigned)
+    setb bl ; if rs < imm => bl = 1. else bl = 0
+    movzx ebx, bl ; zero extend bl into ebx
+
+    mov dword [processor + eax * 4], ebx ; rt = ebx
+    ret ; return
+
+; params: 
+; ebx -> instruction
+; not preserved: eax, ebx, ecx
+slti:
+    mov eax, ebx ; copy instruction into eax
+    mov ecx, ebx ; copy instruction into ecx
+
+    shr ecx, 21 ; fetch index of rs
+    and ecx, 0x1F
+    
+    shr eax, 16 ; fetch index of rt 
+    and eax, 0x1F
+
+    movsx ebx, bx ; sign extend 16-bit immediate
+    cmp dword [processor + ecx * 4], ebx ; check if rs < imm (signed)
+    setl bl ; if rs < imm => bl = 1. else bl = 0
+    movzx ebx, bl ; zero extend bl into ebx
+
+    mov dword [processor + eax * 4], ebx ; rt = ebx
+    ret ; return
+
+; params: 
+; ebx -> instruction
+; not preserved: eax, ebx, ecx
 ori:
     mov eax, ebx ; copy instruction into eax
     mov ecx, ebx ; copy instruction into ecx
